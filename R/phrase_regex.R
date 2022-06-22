@@ -1,9 +1,44 @@
 
 library(stringr)
+library(stringi)
 library(tidytext)
-G_REGEX_CATEGORY_PHRASE <-  get_regex_categories_phrases()
+library(quanteda)
+source(file.path('R', 'generate_regex.R'))
 
 
+
+G_STOP_WORDS <- NULL
+get_stop_words <- function(lang, force_reload = FALSE){
+  
+  if (force_reload){
+    G_STOP_WORDS <<- NULL
+  }
+  
+  
+  if ( is.null(G_STOP_WORDS)){
+    fr_stop <- 
+      c("comme", "avoir", "plus", "avant", "être") |>
+      c(quanteda::stopwords("french")) |>
+      unique() 
+    
+    en_stop <- 
+      tidytext::stop_words$word |>
+      c(quanteda::stopwords("english")) |> 
+      unique() 
+    G_STOP_WORDS <<- 
+      dplyr::bind_rows(  
+        dplyr::tibble(stops = fr_stop, lng = 'french'),
+        dplyr::tibble(stops = en_stop, lng = 'english')
+      )  |>
+      dplyr::distinct()
+    
+  }
+  
+  
+  G_STOP_WORDS |>
+    dplyr::filter(lng == lang) |>
+    dplyr::pull(stops)
+}
 
 #' Title
 #'
@@ -21,21 +56,28 @@ G_REGEX_CATEGORY_PHRASE <-  get_regex_categories_phrases()
 #' x = 'am I the asshole, no really am I the asshole'
 #' x = 'run devil run devil run'
 #' find_categories_from_phrase_regex(x)
-#' 
+#' find_categories_from_phrase_regex(x = 'enculé le la les.')
 #' 
 find_categories_from_phrase_regex <- function(
     x,
+    lang,
     str_nchar_limit = 1000,
-    regex_cat_phrases = G_REGEX_CATEGORY_PHRASE,
-    input_stop_words = tidytext::stop_words$word  
+    regex_cat_phrases = get_regex_categories_phrases(),
+    input_stop_words = get_stop_words(lang = lang, force_reload = FALSE)
   ){
   x_2 <- 
     x |>
     #str_replace_all(str,stop_words_regex, '') |>
     stringr::str_squish() |>
+    stringi::stri_trans_general(id = "Latin-ASCII")  |>
     stringr::str_sub(1, str_nchar_limit) |>
     janitor::make_clean_names(case = 'title') |>
     stringr::str_to_lower()
+  
+  
+  regex_cat_phrases <- 
+    regex_cat_phrases |> 
+    filter(lng == lang)
   
   match_extracted <- 
     map2_dfr(regex_cat_phrases$regex,regex_cat_phrases$phrase, ~{
@@ -55,7 +97,7 @@ find_categories_from_phrase_regex <- function(
     distinct()
   
   #match_locations <- 
-    map2_dfr(match_extracted$found, match_extracted$phrase,
+  map2_dfr(match_extracted$found, match_extracted$phrase,
       ~{
         #.x <- match_extracted$found[[1]]
         #.y =  match_extracted$phrase[[1]]
@@ -116,6 +158,7 @@ convert_phrases_found_to_list <- function(dat){
 #' Title Identical to find_categories_from_phrase_regex but returns a nested list
 #'
 #' @param x 
+#' @param lang
 #' @param ... 
 #'
 #' @return
@@ -127,12 +170,14 @@ convert_phrases_found_to_list <- function(dat){
 #' 
 find_categories_from_phrase_regex_lst <- function(
     x,
+    lang,
     ...
+    
 ){
   x |> map(~{
     lst <- 
     .x |>
-      find_categories_from_phrase_regex() |>
+      find_categories_from_phrase_regex(lang = lang) |>
       convert_phrases_found_to_list()
     lst[['text']] <- .x
     return(lst)

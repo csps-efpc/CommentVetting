@@ -1,3 +1,7 @@
-rx,cat
-[:digit:]{3}(-)[:digit:]{3}(-)[:digit:]{4},phone_number
-[[:alnum:].-_]+@[[:alnum:].-]+,e_mail
+rx,cat,ignr_cs, lng
+([1]([.\\s\\_\\-]*))*[\\(]*[:digit:]{3}[\\)]*([.\\s\\_\\-]*)[:digit:]{3}([.\\s\\_\\-]*)[:digit:]{4},phone_number,FALSE, english
+[[:alnum:].-_]+@[[:alnum:].-]+,e_mail,FALSE, english
+[ABCEGHJ-NPRSTVXY][:digit:][ABCEGHJ-NPRSTV-Z][ -]?[:digit:][ABCEGHJ-NPRSTV-Z][:digit:], postal_code, TRUE, english
+([1]([.\\s\\_\\-]*))*[\\(]*[:digit:]{3}[\\)]*([.\\s\\_\\-]*)[:digit:]{3}([.\\s\\_\\-]*)[:digit:]{4},phone_number,FALSE, french
+[[:alnum:].-_]+@[[:alnum:].-]+,e_mail,FALSE, french
+[ABCEGHJ-NPRSTVXY][:digit:][ABCEGHJ-NPRSTV-Z][ -]?[:digit:][ABCEGHJ-NPRSTV-Z][:digit:], postal_code, TRUE, french

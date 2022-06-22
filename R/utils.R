@@ -15,7 +15,11 @@ combine_named_lists <- function(a, b){
     # .x = a[[1]]
     # .y = b[[1]]
     keys <- unique(c(names(.x), names(.y)))
-    purrr::map2(.x[keys], .y[keys], \(.x1, .y1){c(.x1, .y1) |> unique()}) |>
+    purrr::map2(.x[keys], .y[keys], \(.x1, .y1){
+      #.x1 = ..x[keys][[1]]
+      #.y1 = .y[keys][[1]]
+      c(.x1, .y1) |> unique()
+      }) |>
       stats::setNames(keys)
   })
 }

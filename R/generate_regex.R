@@ -12,7 +12,13 @@ library(readr)
 library(tidyr)
 library(dplyr)
 library(purrr)
-#' Title reads in prases or words and the categories associated with finding them
+library(stringi)
+library(stringr)
+
+
+
+G_PHRASES_CATEGORIES_DAT <- NULL
+#' Title reads in phrases or words and the categories associated with finding them
 #'
 #' @param fn 
 #'
@@ -21,9 +27,22 @@ library(purrr)
 #'
 #' @examples
 #' read_phrases_categories()
-read_phrases_categories <- function(fn = file.path('data', 'phrase_category.xlsx')){
-  readxl::read_xlsx(fn) |>
-      janitor::clean_names()
+read_phrases_categories <- function(fn = file.path('data', 'phrase_category.xlsx'), force_reload = FALSE){
+  
+  if (force_reload){
+    G_PHRASES_CATEGORIES_DAT <<- NULL
+  }
+  
+  if (is.null(G_PHRASES_CATEGORIES_DAT)){
+    G_PHRASES_CATEGORIES_DAT <<-
+          readxl::read_xlsx(fn) |>
+          janitor::clean_names() |>
+          mutate(phrase = str_squish(str_to_lower(phrase))) |>
+          mutate(phrase = stringi::stri_trans_general(phrase, id = "Latin-ASCII"))  |>
+          distinct() 
+  }
+  
+  G_PHRASES_CATEGORIES_DAT
 }
   
 
@@ -150,8 +169,9 @@ regex_replacements <- function(replacements,
 read_letter_replace_dat <- function(fn = file.path('data', 'letter_replace.csv')){
   readr::read_csv(fn) |>
     janitor::clean_names() |>
-    distinct(letter, alt) |> 
+    
     replace_na(list(letter = ' ')) |>
+    distinct(letter, alt) |> 
     arrange(letter, alt) 
     
 }
@@ -178,7 +198,12 @@ G_LETER_REPLACE_DAT <- read_letter_replace_dat()
 #'   regex_letter_replacements(key = 'a', allow_leet_speak = F)
 regex_letter_replacements <- function(key, 
                                       ..., 
-                                      allow_leet_speak = TRUE){
+                                      allow_leet_speak = TRUE,
+                                      force_reload = FALSE){
+  
+  if (force_reload){
+    G_LETER_REPLACE_DAT <<- NULL
+  }
   
   if (is.null(G_LETER_REPLACE_DAT)){
     G_LETER_REPLACE_DAT <<- read_letter_replace_dat()
@@ -209,6 +234,9 @@ regex_letter_replacements <- function(key,
 #'
 #' @examples
 #'  make_regex_from_words('beach')
+#'  make_regex_from_words("je m'en fiche")
+#'  
+#'  make_regex_from_words(words = "nègre")
 #'  make_regex_from_words(words = 'puck')
 #'  make_regex_from_words(words = 'white genicide')
 #'  bad_regex <- make_regex_from_words(words = c('tigger', 'puck', 'birch', 'Dile', 'friend', 'house'))
@@ -217,16 +245,30 @@ regex_letter_replacements <- function(key,
 make_regex_from_words <- function(words,
                                   include_spaces_between_letters = '[\\s\\_\\-]*',
                                   allow_multiple_letters = TRUE,
-                                  allow_leet_speak = TRUE
+                                  allow_leet_speak = TRUE,
+                                  force_reload = FALSE
 ){
+  
+  
+  if (force_reload){
+    G_LETER_REPLACE_DAT <<- NULL
+  }
+  
+  if (is.null(G_LETER_REPLACE_DAT)){
+    G_LETER_REPLACE_DAT <<- read_letter_replace_dat()
+  }
+  
+  
+  
   
   
   #######################
   # remove words with punctuation
   words2 <- 
     words |>
-    str_to_lower() |> 
-    unique() 
+    stringi::stri_trans_general(id = "Latin-ASCII")  |>
+    str_to_lower() #|> 
+    #unique() 
   #str_replace_all('[[:punct:]]+', ' ') |> 
   #{\(.x){.x[str_detect(.x, '\\s', negate = TRUE)]}}() |>
   #{\(.x){.x[str_detect(.x, '\\+', negate = TRUE)]}}() 
@@ -258,7 +300,7 @@ make_regex_from_words <- function(words,
 
 
 
-
+G_REGEX_CATEGORY_PHRASE <- NULL
 #' Title
 #'
 #' @param phrases 
@@ -269,8 +311,17 @@ make_regex_from_words <- function(words,
 #'
 #' @examples
 #' get_regex_categories_phrases()
-#' 
-get_regex_categories_phrases <- function(phrases = read_phrases_categories() , a_isl2 = '[\\s\\_\\-]*'){
+#' get_regex_categories_phrases(force_reload = T)
+get_regex_categories_phrases <- function(force_reload = FALSE, phrases = read_phrases_categories(force_reload = force_reload) , a_isl2 = '[\\s\\_\\-]*'){
+  if (force_reload){
+    G_REGEX_CATEGORY_PHRASE <<- NULL
+  }
+  
+  if (! is.null(G_REGEX_CATEGORY_PHRASE)){
+    return(G_REGEX_CATEGORY_PHRASE)
+  }
+  
+
     phrases |> 
     distinct(include_spaces_between_letters ,allow_leet_speak , allow_multiple_letters) %>%
     pmap_dfr(\(include_spaces_between_letters, allow_leet_speak, allow_multiple_letters){
@@ -286,10 +337,11 @@ get_regex_categories_phrases <- function(phrases = read_phrases_categories() , a
       phrases |> filter (include_spaces_between_letters == isl  &
                            allow_leet_speak == als  &
                            allow_multiple_letters == aml) |>
-        mutate(regex = unlist(make_regex_from_words(phrase, 
+        mutate(regex = unlist(make_regex_from_words(words = phrase, 
                                                     include_spaces_between_letters = isl2,
                                                     allow_multiple_letters = aml,
-                                                    allow_leet_speak = als) ))
+                                                    allow_leet_speak = als,
+                                                    force_reload = force_reload) ))
     }) |>
     tidyr::pivot_longer(matches('^category_'), values_drop_na = TRUE, values_to = 'categories') |>
     select(-name, -include_spaces_between_letters , -allow_leet_speak , -allow_multiple_letters ) |>
