@@ -92,6 +92,7 @@ find_categories_from_phrase_regex <- function(
       #print(founds)
       return(tibble(found = as.character(founds), phrase = as.character(.y)))
       }) |>
+    bind_rows(tibble(found = as.character(), phrase = as.character())) |>
     mutate(found = str_squish(found))|>
     filter(!found %in% input_stop_words ) |> #Eliminate stop words that are found 
     distinct()

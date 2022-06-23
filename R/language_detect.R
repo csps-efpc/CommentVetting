@@ -20,6 +20,10 @@ library(textcat)
 get_language <- function(x, ...){
   x |>
     textcat(... = ...)
+  
+  
+  # textcat(c("This is an english sentence.",
+  #           "Das ist ein deutscher satz."))
 }
 
 #' Title returns if it is a valid language
