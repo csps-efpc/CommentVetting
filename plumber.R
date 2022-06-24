@@ -38,17 +38,16 @@ function(){
 
 
 
-# msg = "Wayne Gretzky is known as the fucking great one."
-# msg = "Michael Jordan is the GOAT."
-# msg = "Sir I respectfully disagree with you, for the reason that you are a pimp."
-#' msg = 'Lawrence Taylor was a coke head. Which explains a why he was an assssssssssho0000000le on the field, Robin William was also, that explains why he was so hyper in his comedy. Maybe we should contact Wllness Togeather Canada at 1-866-585-0445 to help them, or should we say fuckit and be asshole our self and let them be? No Really we should call 866-585-0445, nigger'
-#' 
-# #msg = "Lawrence Taylor était accro à la coke. Ce qui explique pourquoi il était un connard sur le terrain, Robin William l'était aussi, ce qui explique pourquoi il était si hyperactif dans sa comédie. Peut-être devrions-nous contacter Wllness Togeather Canada au 1-866-585-0445 pour les aider, ou devrions-nous dire fuckit et être des connards nous-mêmes et les laisser faire ? Non vraiment, on devrait appeler le 866-585-0445, négro."
-# msg = 'This is maybe a valid SIN 046 454 286 I found on the crap ass wikipedia founded by the Liberal fucktards Jimmy Whales and Larry Sanger as a bastion of slavery!!!!, but this is not 123 456 789 seee! asswipe!!!'
-# msg  = 'Das ist vielleicht eine gültige SIN 046 454 286, die ich auf der Scheiß-Wikipedia gefunden habe, die von den liberalen Arschlöchern Jimmy Whales und Larry Sanger als eine Bastion der Sklaverei gegründet wurde!!!!, aber das ist nicht 123 456 789 seee! Arschgeige!!!'
-#' x = 'am I the asshole, no really am I the asshole'
-#' x = 'run devil run devil run'
-#' find_categories_from_phrase_regex(x)
+#' # msg = "Michael Jordan is the GOAT."
+#' # msg = "Sir I respectfully disagree with you, for the reason that you are a pimp."
+#' #' msg = 'Lawrence Taylor was a coke head. Which explains a why he was an assssssssssho0000000le on the field, Robin William was also, that explains why he was so hyper in his comedy. Maybe we should contact Wllness Togeather Canada at 1-866-585-0445 to help them, or should we say fuckit and be asshole our self and let them be? No Really we should call 866-585-0445, nigger'
+#' #' 
+#' msg = c("Lawrence Taylor était accro à la coke. Ce qui explique pourquoi il était un connard sur le terrain, Robin William l'était aussi, ce qui explique pourquoi il était si hyperactif dans sa comédie. Peut-être devrions-nous contacter Wllness Togeather Canada au 1-866-585-0445 pour les aider, ou devrions-nous dire fuckit et être des connards nous-mêmes et les laisser faire ? Non vraiment, on devrait appeler le 866-585-0445, négro.", 
+#' 'This is maybe a valid SIN 046 454 286 I found on the crap ass wikipedia founded by the Liberal fucktards Jimmy Whales and Larry Sanger as a bastion of slavery!!!!, but this is not 123 456 789 seee! asswipe!!!',
+#' 'Das ist vielleicht eine gültige SIN 046 454 286, die ich auf der Scheiß-Wikipedia gefunden habe, die von den liberalen Arschlöchern Jimmy Whales und Larry Sanger als eine Bastion der Sklaverei gegründet wurde!!!!, aber das ist nicht 123 456 789 seee! Arschgeige!!!',
+#' 'am I the asshole, no really am I the asshole', 
+#' 'Run devil run devil run.',"Michael Jordan is the GOAT.", "Wayne Gretzky is known as the fucking great one.")
+#' #' find_categories_from_phrase_regex(x)
 #str_extract(' asdfas  123-456-789 aaaaa', '\b[:digit:]{3}([.\\s\\_\\-]*)[:digit:]{3}([.\\s\\_\\-]*)[:digit:]{3}\b' )
 #* Echo back the input
 #* @param msg The message to check
@@ -56,24 +55,106 @@ function(){
 #* @get /check_message
 #* @serializer unboxedJSON
 function(msg="The main parameter of this enpoint is 'msg', you should think about passing 'msg', its a string....Try it see what happens 😉. If you don't like it the Honky Justin Trudeau will be happy to take your call at 1-800-622-6232"){
-  langs <- get_language(msg)
-  ret_lst <- 
-    get_proper_nouns(x= msg, lang = langs) |> 
-    combine_named_lists(b = get_regex_combined(x= msg, lang = langs)) |> 
-    combine_named_lists(b = find_categories_from_phrase_regex_lst(x= msg, lang = langs))    
+  
+  txt_langs <- 
+    tibble(imsg = 1:length(msg),
+           text = msg) |>
+    mutate(langs = get_language(text))
   
   
-  lengths(ret_lst)
+  dat <- 
+    txt_langs$langs |> 
+    unique() |> 
+    map_dfr(\(lng){
+      #print(lng)
+      txts <- 
+        txt_langs |>
+        filter(langs == lng) |>
+        mutate(index = row_number())
+      
+      bind_rows(
+        get_proper_nouns(x= txts$text, lang = lng) ,
+        get_regex_combined(x= txts$text, lang = lng),
+        find_categories_from_phrase_regex(x= txts$text, lang = lng)
+      ) |>
+        right_join(txts |> select(-text, -langs), by = "index")
+    }) |>
+    filter(!is.na(found) & !is.na(start)) |>
+    right_join(txt_langs, by = "imsg") |> 
+    arrange(imsg, hit_type, sub_type, start, end, found) |>
+    select(-index)
   
-  ret_lst2 <-
-    map2(ret_lst, langs,
-         ~{
-        .x[['lang']] <- .y
-        .x
-      })
   
-  ret_lst2
-  #jsonlite::toJSON(ret_lst2, auto_unbox=TRUE)
+  
+  dat2 <- make_grouped_list(dat, grping =  'imsg',lst_attach = c('text', 'langs', 'imsg'), rest = 'hits' )
+  dat2
+  # 
+  # 
+  # 
+  # 
+  # dat |> 
+  #   group_split(!!sym(grping))  |> # magrittr::extract2(1) ->.grp_dat
+  #   map(\(.grp_dat){
+  #     ret_lst <- list()
+  #     lst_attach |> 
+  #       walk(~{
+  #         ret_lst[[.x]] <<- .grp_dat[[.x]] |> unique()
+  #         .grp_dat[[.x]] <<- NULL
+  #         })
+  #     ret_lst[['dat']] <- .grp_dat
+  #     ret_lst
+  #   })
+  # #.msg_dat <- 
+  #   dat |> 
+  #   group_split(imsg) |> #magrittr::extract2(7)
+  #   map(\(.msg_dat){
+  #     .msg_dat_lang <- txt_langs |> inner_join(.msg_dat)
+  #     list(text = .msg_dat_lang$text |> unique(),
+  #          lang = lang_name_to_code(.msg_dat_lang$langs |> unique()),
+  #          hits = .msg_dat_lang |> 
+  #                 select(-text, -langs) |> 
+  #                 group_split(hit_type) |> #magrittr::extract2(1) -> .msg_hit_dat
+  #                    map(\(.msg_hit_dat){
+  #                      list(
+  #                         type = .msg_hit_dat$hit_type |> unique(),
+  #                         sub_type = .msg_hit_dat |> 
+  #                                   select(-hit_type) |> 
+  #                                   group_split(sub_type) |> #magrittr::extract2(1) -> .msg_hit_sub_dat
+  #                                       map(\(.msg_hit_sub_dat){
+  #                                         list(
+  #                                           type = .msg_hit_dat$hit_type |> unique(),
+  #                                           sub_type = .msg_hit_dat |> 
+  #                                             select(-hit_type) |> 
+  #                                             group_split(sub_type) |> #magrittr::extract2(1) -> .msg_hit_sub_dat
+  #                                         )
+  #                                       })
+  #                      )
+  #                    })
+  #            
+  #            )
+  #   })
+  
+  # msg_dat |> group_split(imsg) %>% setNames(unique(msg_dat$imsg))
+  # 
+  
+  
+  # ret_lst <- 
+  #   get_proper_nouns(x= msg, lang = langs) |> 
+  #   combine_named_lists(b = get_regex_combined(x= msg, lang = langs)) |> 
+  #   combine_named_lists(b = find_categories_from_phrase_regex_lst(x= msg, lang = langs))    
+  # 
+  # 
+  # lengths(ret_lst)
+  # 
+  # ret_lst2 <-
+  #   map2(ret_lst, langs,
+  #        ~{
+  #       .x[['lang']] <- .y
+  #       .x
+  #     })
+  # 
+  # ret_lst2
+  # #jsonlite::toJSON(ret_lst2, auto_unbox=TRUE)
 }
 
 
@@ -85,6 +166,21 @@ function(msg="The main parameter of this enpoint is 'msg', you should think abou
 function(){
   iris |> dplyr::as_tibble()
 }
+
+
+
+#* 
+#* 
+#* @get /test_in
+function(a){
+  print(a)
+  print(typeof(a))
+  length(a)
+  
+}
+
+
+
 
 
 # 

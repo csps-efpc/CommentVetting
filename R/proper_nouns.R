@@ -1,6 +1,10 @@
 
 
+
 library(spacyr)
+library(tidyr)
+library(dplyr)
+library(stringr)
 source(file.path('R', 'language_detect.R'))
 
 
@@ -29,7 +33,9 @@ reload_language_model <- function(lang){
       return(NULL)
     }
   )  
-  #spacy_install(lang_models = c("fr_core_web_sm"))
+  #spacy_install(lang_models = c("en_core_web_sm"))
+  #spacy_install(lang_models = c("fr_core_news_sm"))
+  #fr_core_news_md
   if (lang == 'english')  {spacyr::spacy_initialize(model = "en_core_web_sm")}
   if (lang == 'french')  {spacyr::spacy_initialize(model = "fr_core_news_sm")}
   G_CURR_SPACY_MODEL <<- lang
@@ -61,7 +67,7 @@ ent_type_from_lang <- function(lang){
 #' @export
 #'
 #' @examples
-#' y <- get_proper_nouns(x =  c('run fast', 'The Ottawa Senators are not going to win the Stanley Cup. Maybe they should recruit Justin Bieber, I hear he is better at hockey then music. Trudeau could be an enforcer as he was a boxer.'))
+#' y <- get_proper_nouns(x =  c('run fast', 'The Ottawa Senators are not going to win the Stanley Cup. Maybe they should recruit Justin Bieber, I hear he is better at hockey then music. Trudeau could be an enforcer as he was a boxer.', 'Who is the informant Deep Thoat? Its pseudonym of Bob Woodward!'))
 #' get_proper_nouns(x = 'run fast')
 # x = 'we have had 2 prime ministers named Trudeau , the father Trudeau  and the son Trudeau.'
 #' 
@@ -73,8 +79,12 @@ get_proper_nouns <- function(x,
                              a_ent_type = ent_type_from_lang(lang)){
   # x = 'The MP for Ottawa West Nepean can be reached at anita.vandenbeld@parl.gc.ca, while the MPP can be contacted @ 613-721-8075'
   #x = "Les Sénateurs d'Ottawa ne vont pas gagner la Coupe Stanley. Ils devraient peut-être recruter Justin Bieber, il paraît qu'il est meilleur au hockey qu'en musique. Trudeau pourrait être un enforcer comme il était boxeur."
-    
-
+  #x <- c("We have had 2 prime ministers named Trudeau , the father Trudeau  and the son Trudeau. There is also Brian Mulroney. ", 'we need to run, jump and slide', 'The Ottawa Senators are not going to win the Stanley Cup. Maybe they should recruit Justin Bieber, I hear he is better at hockey then music. Trudeau could be an enforcer as he was a boxer.')
+  #x = 'run away'
+  
+  assertthat::assert_that(length(lang)==1)
+  
+  
   reload_language_model(lang = lang)
   
   spacy_dat <- 
@@ -95,32 +105,33 @@ get_proper_nouns <- function(x,
         dplyr::filter(ent_type == a_ent_type) |> 
         dplyr::mutate(index = as.integer(stringr::str_replace(doc_id, '^text', '')))
     } |>
-    distinct(text, index)
+    dplyr::distinct(text, index)
     
+
+  dplyr::tibble(text = x, index = 1:length(x)) |>
+    dplyr::left_join(persons_dat |> rename(found:=text), by = "index") |>
+    dplyr::mutate(hit_type = 'proper_nouns') |>
+    dplyr::select(index, found, hit_type, text) |>
+    dplyr::mutate(location = str_locate_all(text, found)) |>
+    tidyr::unnest(cols = location) %>%
+    dplyr::mutate(location = as_tibble(location)) |>
+    tidyr::unnest_wider(location) |> 
+    dplyr::rename(any_of(c(start = 'V1', end = 'V2'))) |>
+    select(-text)
+
   
-  # tibble(text = x, index = 1:length(x)) |>
-  #   left_join(persons_dat |> rename(found:=text), by = "index") |>
-  #   mutate(hit_type = 'proper_nouns') |>
-  #   select(index, found, hit_type, text) |>
-  #   mutate(location = as.data.frame(str_locate_all(text, found))) |>
-  #   unnest(cols = location) %>%
-  #   select(., location) |> unnest() |> colnames()
-  #   bind_cols(select(., -location), select(., location))
-  #   colnames() |>
-  #   rename(aaa := 'location')
   
   
-  
-  purrr::map(1:length(x), ~{
-    text <- x[.x]
-    found <- persons_dat |> dplyr::filter(index == .x) |> dplyr::pull(text)
-    list(
-      text = text,
-      proper_nouns = purrr::map(found, \(.f){
-        list(found = .f,
-             location = stringr::str_locate(string = text, pattern = .f)
-      )}))
-  })
+  # purrr::map(1:length(x), ~{
+  #   text <- x[.x]
+  #   found <- persons_dat |> dplyr::filter(index == .x) |> dplyr::pull(text)
+  #   list(
+  #     text = text,
+  #     proper_nouns = purrr::map(found, \(.f){
+  #       list(found = .f,
+  #            location = stringr::str_locate(string = text, pattern = .f)
+  #     )}))
+  # })
 }
 
 

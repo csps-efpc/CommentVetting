@@ -127,6 +127,8 @@ str_locate_rx_check_func <- function(x,
                                      func_ch, 
                                      default_func = all_true
                                      ){
+  assertthat::assert_that(length(x) == 1)
+
   extracted  <- x |> stringr::str_extract_all(regex(pattern = rx, ignore_case = ignr_cs ))
   assertthat::assert_that(length(extracted) == 1)
   extracted <- extracted[[1]]
@@ -139,6 +141,9 @@ str_locate_rx_check_func <- function(x,
   
   # func_ch = "validate_sin"
   # func_ch = ""
+  
+  ######################
+  # Get function from R environment
   f <- 
     tryCatch(
       get(func_ch),
@@ -148,17 +153,36 @@ str_locate_rx_check_func <- function(x,
       }
     ) 
   
+  
+  ##########################
+  # only keep regex finds that pass the test
   locations_filtered <- locations[f(extracted),,drop = FALSE]
+  
+  
   assertthat::assert_that(is.matrix(locations_filtered))
   
-  
+
   locations_filtered |> 
     apply(1,\(st_en){
-      list('found' = stringr::str_sub(x, st_en[[1]], st_en[[2]]),
+        tibble::tibble(found = stringr::str_sub(x, st_en[[1]], st_en[[2]]),
            #location = list(start = st_en[[1]], end = st_en[[2]])
-           location = c(st_en[[1]],st_en[[2]])
+           start = st_en[[1]],
+           end = st_en[[2]]
       )
-    })
+    }) |>
+    bind_rows(tibble(found = as.character(), start = as.integer(), end = as.integer())) |>
+    filter(!is.na(found))
+  
+  
+  
+    
+  # locations_filtered |> 
+  #   apply(1,\(st_en){
+  #     list('found' = stringr::str_sub(x, st_en[[1]], st_en[[2]]),
+  #          #location = list(start = st_en[[1]], end = st_en[[2]])
+  #          location = c(st_en[[1]],st_en[[2]])
+  #     )
+  #   })
   
 }
 
@@ -181,34 +205,42 @@ str_locate_rx_check_func <- function(x,
 #' @export
 #'
 #' @examples
-#'  get_regex_combined(x = 'this is a valid but unassigned SIN 046 454 286, and this is an invalid but properly formated sin 321 543 8761.', lang = 'english')
+#'  get_regex_combined(x = c('this is a valid but unassigned SIN 046 454 286, and this is an invalid but properly formated sin 321 543 8761.', 'no Sin here', 'we now have and email address, funny@man.ca' ), lang = 'english')
 #' 
 get_regex_combined <- function(x, lang, regex_dat = read_regex_categories()){
+  assertthat::assert_that(length(lang) == 1)
+
+  #assertthat::assert_that(valid_language(lang))
   
   x_no_accents <- 
     x |> 
     stringi::stri_trans_general(id = "Latin-ASCII")
-    
+
+  
+  regex_dat_lng <- 
+    regex_dat |> 
+    filter(str_detect(lng, lang) | lng == 'ALL') |> 
+    #filter(lng == lang) |> 
+    select(-lng)  
+      
   ################################
   # 
-  purrr::map2(x_no_accents, x, ~{
-    regex_dat_lng <- 
-      regex_dat |> 
-      filter(lng == lang) |> 
-      select(-lng) 
-    lst<- 
+  #purrr::map2_dfr(x_no_accents, x, ~{
+  purrr::map_dfr(1:length(x), \(.i){
+    .x <- x_no_accents[[.i]]
+    .y <- x[[.i]]
+    #lst<- 
       regex_dat_lng |> 
-      purrr::pmap(\(rx,cat, ignr_cs, func_ch){
-            str_locate_rx_check_func(.x, rx, ignr_cs, func_ch)
-        }) |> 
-      stats::setNames(regex_dat_lng$cat) 
-    
-    lst <-lst[lengths(lst) > 0]
-    
-    
-    
-    lst[['text']] <- .y
-    lst
+      purrr::pmap_dfr(\(rx , cat, sub_cat, ignr_cs, func_ch){
+            str_locate_rx_check_func(.x, rx, ignr_cs, func_ch) |> 
+            mutate(hit_type = cat, sub_type = sub_cat)
+         }) |> 
+      #mutate(text = .y) |>
+      mutate(index = .i)
+    # stats::setNames(regex_dat_lng$cat) 
+    #lst <-lst[lengths(lst) > 0]
+    # lst[['text']] <- .y
+    # lst
   })
 }
 
