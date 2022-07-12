@@ -1,0 +1,12 @@
+build
+.dockerignore
+Dockerfile
+docker-compose.yml
+docker
+.gitignore
+
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+LICENSE.md
+README.md
+SECURITY.md
