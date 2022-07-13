@@ -17,7 +17,18 @@ RUN R -e "install.packages('spacyr')" \
     R -e "install.packages('quanteda')" \
     R -e "install.packages('tibble')" \
     R -e "install.packages('numbers')" \
-    R -e "install.packages('glue')"
+    R -e "install.packages('stringdist')" \
+    R -e "install.packages('tm')" \
+    R -e "install.packages('textreuse')" \
+    R -e "install.packages('ggplot2')" \
+    R -e "install.packages('httr')" \
+    R -e "install.packages('jsonlite')" \
+    R -e "install.packages('igraph')" \
+    R -e "install.packages('tokenizers')" \
+    R -e "install.packages('gtools')" \
+    R -e "install.packages('glue')" \
+    R -e "install.packages('arrow')" \
+    R -e "install.packages('dotenv')" 
 
 # CWD
 WORKDIR /
