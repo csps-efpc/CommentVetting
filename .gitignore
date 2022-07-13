@@ -43,3 +43,5 @@ test_data/*
 
 private/
 private/*
+
+.env

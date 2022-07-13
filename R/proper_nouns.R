@@ -5,6 +5,7 @@ library(spacyr)
 library(tidyr)
 library(dplyr)
 library(stringr)
+library(glue)
 source(file.path('R', 'language_detect.R'))
 
 
@@ -22,15 +23,15 @@ G_CURR_SPACY_MODEL <- ''
 reload_language_model <- function(lang){
   
   if (lang == G_CURR_SPACY_MODEL | !valid_language(lang)){
-    return()
+    return(NULL)
   }
   
   
   tryCatch(
     spacyr::spacy_finalize(),
     error=function(cond) {
-      message(cond)
-      return(NULL)
+      message(glue('There is no spacy model, error = "{cond}"'))
+      #return(NULL)
     }
   )  
   #spacy_install(lang_models = c("en_core_web_sm"))

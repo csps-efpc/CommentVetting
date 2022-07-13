@@ -95,7 +95,8 @@ lang_name_to_code <- function(a_lang, a_lang_of_lang = 'english'){
 
 
 #' Title returns the language of the string
-#'
+#' list of supported languages
+#'   https://fasttext.cc/docs/en/language-identification.html
 #' @param x 
 #' @param ... 
 #'
@@ -111,13 +112,13 @@ get_language <- function(x, file_pretrained = system.file(file.path("language_id
   #   textcat(... = ...)
   
   x |> 
-  language_identification(pre_trained_language_model_path =file_pretrained, ... = ...)  |> 
+  language_identification(pre_trained_language_model_path =file_pretrained)  |> 
     mutate(lang_name = lang_code_to_name(iso_lang_1)) |>
     pull(lang_name)
 }
-
-
-
+x <- '中国的领导人是习近平'
+x <- 'Für eine gute Zeit rufen Sie'
+x<-'Which ist gut.'
 
 #' Title returns if it is a valid language
 #'

@@ -4,51 +4,10 @@ library(stringi)
 library(tidytext)
 library(quanteda)
 library(tibble)
+source(file.path('R', 'utils.R'))
+
+
 source(file.path('R', 'generate_regex.R'))
-
-
-
-G_STOP_WORDS <- NULL
-#' Title
-#'
-#' @param lang 
-#' @param force_reload 
-#'
-#' @return vector of words that are 'fine' and should not be matched to anything.
-#' @export
-#'
-#' @examples
-get_stop_words <- function(lang, force_reload = FALSE){
-  
-  if (force_reload){
-    G_STOP_WORDS <<- NULL
-  }
-  
-  
-  if ( is.null(G_STOP_WORDS)){
-    fr_stop <- 
-      c("comme", "avoir", "plus", "avant", "être") |>
-      c(quanteda::stopwords("french")) |>
-      unique() 
-    
-    en_stop <- 
-      tidytext::stop_words$word |>
-      c(quanteda::stopwords("english")) |> 
-      unique() 
-    G_STOP_WORDS <<- 
-      dplyr::bind_rows(  
-        dplyr::tibble(stops = fr_stop, lng = 'french'),
-        dplyr::tibble(stops = en_stop, lng = 'english')
-      )  |>
-      dplyr::distinct()
-    
-  }
-  
-  
-  G_STOP_WORDS |>
-    dplyr::filter(lng == lang) |>
-    dplyr::pull(stops)
-}
 
 
 
