@@ -29,7 +29,6 @@ source(file.path('R','min_hash.R'))
 
 G_FIRST_TIME <- Sys.time()
 #* Echo back the input
-#* @param msg The message to echo
 #* @get /up
 function(){
   toc <- Sys.time()
