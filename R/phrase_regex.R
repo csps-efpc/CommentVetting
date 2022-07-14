@@ -20,11 +20,11 @@ source(file.path('R', 'generate_regex.R'))
 #' @export
 #'
 #' @examples
-as_tibble_error_catch <- function(x, def_tibble = tibble(start = as.character(), end = as.character())){
+as_tibble_error_catch <- function(x, def_tibble = tibble(start = as.integer(), end = as.integer())){
       tryCatch(
         as_tibble(x),
         error=function(cond) {
-          message(glue('could not make tibble, using default org error = {cond}\n'))
+          message(glue('could not make tibble, returning default tibble. Origional error = {cond}\n'))
           return(def_tibble)
         }
       )
@@ -51,7 +51,8 @@ as_tibble_error_catch <- function(x, def_tibble = tibble(start = as.character(),
 #' x = c('run devil run devil run', 'hop skip and jump', 'faster higher stronger')
 #' find_categories_from_phrase_regex(x)
 #' find_categories_from_phrase_regex(x = 'enculé le la les.')
-#' 
+#' x = "Ryan Gosling likes to eat poop, because it tastes good. What a fucking Wierdo!, call and complaing at 1 (800) 622-6232."
+#' x = "Ryan Gosling likes to eat poop, because it tastes good. What a f.u.c.k.i.n.g. Wierdo!, call and complaing at 1 (800) 622-6232."
 find_categories_from_phrase_regex <- function(
     x,
     lang,
@@ -81,23 +82,27 @@ find_categories_from_phrase_regex <- function(
   
   
   
+  #x = "in 1812 madison was mad he was the president, you know but he thought he tell the british where they ought to go"
+  #x = "in 1812 madison was  fucking mad he was the president, you know but he thought he tell the british where they ought to go"
   
   
-
-  
-  
-  map_dfr(1:length(x), \(.i){
+  1:length(x) |> 
+  map_dfr(\(.i){
     .text = x[[.i]]
+    .text_cleaner = janitor::make_clean_names(str_sub(.text, 1, str_nchar_limit), case = 'title')
+    .text_cleaner_edits = edit_required(.text, .text_cleaner)
     .text_2 = x_2[[.i]]
     regex_cat_phrase_lang |>
       mutate(found = str_extract_all(string = .text_2, pattern = regex) ) |> 
       unnest(found, keep_empty  = FALSE)  |>
       unnest(categories, keep_empty  = FALSE) |>
-      mutate(location = str_locate_all(str_to_lower(janitor::make_clean_names(str_sub(.text, 1, str_nchar_limit), case = 'title')), stringr::fixed(str_trim(found)))) |>
+      mutate(location = str_locate_all(str_to_lower(.text_cleaner), stringr::fixed(str_trim(found)))) |>
       unnest(location, keep_empty  = FALSE) |>
       mutate(location = as_tibble_error_catch(location)) |>
       unnest_wider(location) |>
       rename(any_of(c(start = 'V1', end = 'V2'))) |>
+      mutate(start = (start + str_count(str_sub(.text_cleaner_edits, 1, start), "I")) - str_count(str_sub(.text_cleaner_edits, 1, start), "D")) |>
+      mutate(end = (end + str_count(str_sub(.text_cleaner_edits, 1, end), "I")) - str_count(str_sub(.text_cleaner_edits, 1, end), "D")) |>
       #mutate_at(matches('start'), as.integer)
       mutate(across(any_of(c("start", "end")), as.integer)) |>
       select(-lng, -regex) |>
@@ -112,67 +117,7 @@ find_categories_from_phrase_regex <- function(
     rename(hit_type := categories, sub_type := phrase )
   
   
-  
-  
-  # match_extracted <- 
-  #   map2_dfr(regex_cat_phrase_lang$regex,regex_cat_phrase_lang$phrase, ~{
-  #     #.x <- regex_cat_phrases$regex[[1]]
-  #     #.y <- regex_cat_phrases$phrase[[1]]
-  #     #.x <- regex_cat_phrases |> filter(str_detect(phrase,'ashole')) |> slice(1) |> pull (regex)
-  #     #.y <- regex_cat_phrases |> filter(str_detect(phrase,'ashole')) |> slice(1) |> pull (phrase)
-  #     #print(.y)
-  #     tibble(index = 1:length(x), 
-  #            text = x_2
-  #            ) |>
-  #       mutate(found = str_extract_all(text, .x) ) |>
-  #       mutate(phrase = .y) |> 
-  #       unnest(found, keep_empty  = FALSE) |>
-  #       #mutate(found = str_trim(found))|>
-  #       #mutate(location = str_locate_all(str_to_lower(janitor::make_clean_names(str_sub(x, 1, str_nchar_limit), case = 'title')), stringr::fixed(str_trim(found)))) |>
-  #       #unnest(location, keep_empty  = TRUE) |> #pull (location) |> map(as_tibble)
-  #       #mutate(location = as_tibble_error_catch(location)) |>
-  #       #unnest_wider(location) |> 
-  #       #rename(any_of(c(start = 'V1', end = 'V2'))) |>
-  #       #add_column(c('start', 'end'))
-  #       select(-text) |>
-  #       distinct() 
-  #   }) |> 
-  #     
-  #   
-  #       
-  #     founds <- str_extract_all(x_2, .x) |> unlist()
-  #     
-  #     if (length(founds) == 0){
-  #       return(tibble(found = as.character(), phrase = as.character()))
-  #     }
-  #     #print(founds)
-  #     return(tibble(found = as.character(founds), phrase = as.character(.y)))
-  #     }) |>
-  #   bind_rows(tibble(found = as.character(), phrase = as.character())) |>
-  #   mutate(found = str_squish(found))|>
-  #   filter(!found %in% input_stop_words ) |> #Eliminate stop words that are found 
-  #   distinct()
-  # 
-  # #match_locations <- 
-  # map2_dfr(match_extracted$found, match_extracted$phrase,
-  #     ~{
-  #       #.x <- match_extracted$found[[1]]
-  #       #.y =  match_extracted$phrase[[1]]
-  #       locations <- str_locate_all(str_to_lower(janitor::make_clean_names(str_sub(x, 1, str_nchar_limit), case = 'title')), stringr::fixed(str_trim(.x)))
-  #       assertthat::assert_that(length(locations) == 1)
-  #       locations <- locations[[1]]
-  #       tibble(
-  #         found = .x,
-  #         start = locations[,'start'],
-  #         end = locations[,'end'],
-  #         phrase = .y
-  #       )
-  #   }) |> 
-  #   bind_rows(tibble(found = as.character(), start = as.integer(), end = as.integer(), phrase = as.character())) |>
-  #   distinct() |>
-  #     left_join(regex_cat_phrases |> select(phrase, categories), by = "phrase") |>
-  #     unnest(categories) |>
-  #     distinct(start, end, categories, .keep_all = TRUE)
+
 }  
 
 
@@ -222,7 +167,7 @@ convert_phrases_found_to_list <- function(dat){
 #' @export
 #'
 #' @examples
-#' find_categories_from_phrase_regex_lst(x = x)
+#' find_categories_from_phrase_regex_lst(x = 'Ryan Gosling likes to eat poop, because it tastes good. What a fucking Wierdo!, call and complaing at 1 (800) 622-6232.', lang = 'en')
 #' 
 #' 
 find_categories_from_phrase_regex_lst <- function(

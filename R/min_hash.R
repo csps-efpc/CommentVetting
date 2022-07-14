@@ -67,13 +67,13 @@ split_equal_parts_2 <- function(x, number_parts = 20, ...){
 #' @export
 #'
 #' @examples
-#'    closest_number(5, lst = c(1,2,7, 9))
+#'    closest_number(5, lst = c(1,2,7, 9, 7))
 closest_number <- function(x, lst){
   closest_index <- 
     (lst - x) |> 
     abs() |>
     which.min()
-  lst[closest_index]
+  lst[closest_index[[1]]]
 }
 
 
@@ -111,6 +111,7 @@ closest_highly_composite <- function(x,lst = c(1, 2, 4, 6, 12, 24, 36, 48, 60, 1
 #'  divisors(99)
 #'  divisors(120) # HIGHLY COMPOSITE
 divisors <- function(x){
+  assertthat::assert_that(length(x) == 1)
   y <- seq_len( ceiling( x / 2 ) )
   y[ x%%y == 0 ]
 }
@@ -190,7 +191,8 @@ best_bands <- function(n_hashes, low_prob = 0.25, high_prob = 0.75){
   }) |> 
     mutate(diff = high_prob - low_prob) |>
     arrange(diff) |>
-    slice(which.max(diff)) |>
+    slice_max(order_by = diff, with_ties = FALSE) |> 
+    #slice(which.max(diff), ) |>
     pull(band)
 }
 
@@ -286,7 +288,7 @@ base_string <- function(x,
 edit_required <- function(a, b){
   assertthat::assert_that(length(b) == 1)
   
-  attr(adist(b, a, counts = TRUE), "trafos")[,1]
+  attr(adist(b, a, counts = TRUE), "trafos")[1,]
 }
 
 
@@ -363,7 +365,7 @@ find_near_duplicats <- function(x,
   
   
   #corpus_dat <- corpus_2_dat(corpus_chunk)
-  
+  print(glue('{Sys.time()} attaching text comments to clusters'))
   cluster_comments <- 
     1:length(clusters) |>
     map_dfr(~{
@@ -380,6 +382,8 @@ find_near_duplicats <- function(x,
     #full_join(corpus_dat |> mutate(comment_id = as.character(comment_id)), by = 'comment_id')
 
   
+  
+  print(glue('{Sys.time()} generate cluster names'))
   cluster_names <- 
     cluster_comments |>
     #filter(!is.na(grp)) |>
@@ -400,15 +404,15 @@ find_near_duplicats <- function(x,
     mutate(name = janitor::make_clean_names(name, case = "title")) |>
     filter(grp > 0)
   
-  a <- 
-  cluster_comments |>
+  cluster_comments_with_name <- 
+    cluster_comments |>
     full_join(cluster_names, by = "grp")
 
   b <-   
-    a |>
+    cluster_comments_with_name |>
     group_split(grp)  |> # magrittr::extract2(1) ->.grp_dat
     map_dfr(\(.grp_dat){
-      #.grp_dat <- a |> filter(grp == 45)
+      #.grp_dat <- cluster_comments_with_name |> filter(grp == 2)
       if (is.na(unique(.grp_dat$grp))){
         return(.grp_dat)
       }
@@ -421,11 +425,20 @@ find_near_duplicats <- function(x,
       .grp_dat |>
         #sample_n(20) |>
         mutate(edits = edit_required(text, b_str)) |>
-        mutate(b_str = b_str)
+        mutate(b_str = b_str) |>
+        # mutate(matched_chars = str_count(edits, 'M')) |>
+        # mutate(inserted_chars = str_count(edits, 'I')) |>
+        # mutate(deleted_chars = str_count(edits, 'D')) |>
+        # mutate(substituted_chars = str_count(edits, 'S')) |>
+        mutate(total_changes = str_count(edits, 'I|S|D'))
         #select(edits) |> head(1) |> pull(edits)
     })
 
-  b
+  b |> 
+    #filter(grp == 6) |>
+    arrange(grp, desc(total_changes))
+    
+    
   #cluster_comments |> filter(grp == 3)
   
   # cluster_comments |>
@@ -435,8 +448,13 @@ find_near_duplicats <- function(x,
     
 }
 
+
+counts_chars <- function(x, char = 'M'){
+  str_count(x, char)
+}
+
 # data_save_dir <- file.path('private', 'regulations.gov')
 # fn <- list.files(data_save_dir, pattern = '^comments_details_.*\\.feather$', full.names = TRUE) |> sample(1)
 # comments <- arrow::read_feather(fn)
-# cc <- find_near_duplicats(x = comments$comment)
+# cc <- find_near_duplicats(x = sample(comments$comment, 500))
 

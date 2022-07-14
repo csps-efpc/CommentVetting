@@ -109,3 +109,27 @@ get_stop_words <- function(lang, force_reload = FALSE){
     dplyr::pull(stops)
 }
 
+
+
+
+
+
+
+#' Returns a sting which represent the required edits to turn B into A
+#'
+#' @param a  a vector of strings
+#' @param b  a single string
+#'
+#' @return
+#'  a vector of string
+#' @export
+#'
+#' @examples
+#' edit_required("prefix this is the same", "this is the same postfix")
+edit_required <- function(a, b){
+  assertthat::assert_that(length(b) == 1)
+  
+  attr(adist(b, a, counts = TRUE), "trafos")[,1]
+}
+
+

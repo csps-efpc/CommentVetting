@@ -206,16 +206,22 @@ str_locate_rx_check_func <- function(x,
 #'
 #' @examples
 #'  get_regex_combined(x = c('this is a valid but unassigned SIN 046 454 286, and this is an invalid but properly formated sin 321 543 8761.', 'no Sin here', 'we now have and email address, funny@man.ca' ), lang = 'english')
+#'  get_regex_combined(x = 'Ryan Gosling likes to eat poop, because it tastes good. What a fucking Wierdo!, call and complaing at 1 (800) 622-6232.')
 #' 
 get_regex_combined <- function(x, lang, regex_dat = read_regex_categories()){
   assertthat::assert_that(length(lang) == 1)
 
   #assertthat::assert_that(valid_language(lang))
+
   
-  x_no_accents <- 
-    x |> 
+  x_no_accents <-
+    x |>
     stringi::stri_trans_general(id = "Latin-ASCII")
 
+  # .text_cleaner = janitor::make_clean_names(str_sub(.text, 1, str_nchar_limit), case = 'title')
+  # .text_cleaner_edits = edit_required(.text, .text_cleaner)
+  
+  
   
   regex_dat_lng <- 
     regex_dat |> 
@@ -227,12 +233,17 @@ get_regex_combined <- function(x, lang, regex_dat = read_regex_categories()){
   # 
   #purrr::map2_dfr(x_no_accents, x, ~{
   purrr::map_dfr(1:length(x), \(.i){
+    
     .x <- x_no_accents[[.i]]
     .y <- x[[.i]]
+    .text_cleaner_edits = edit_required(.y, .x)
+    
     #lst<- 
       regex_dat_lng |> 
       purrr::pmap_dfr(\(rx , cat, sub_cat, ignr_cs, func_ch){
             str_locate_rx_check_func(.x, rx, ignr_cs, func_ch) |> 
+            mutate(start = (start + str_count(str_sub(.text_cleaner_edits, 1, start), "I")) - str_count(str_sub(.text_cleaner_edits, 1, start), "D")) |>
+            mutate(end = (end + str_count(str_sub(.text_cleaner_edits, 1, end), "I")) - str_count(str_sub(.text_cleaner_edits, 1, end), "D")) |>
             mutate(hit_type = cat, sub_type = sub_cat)
          }) |> 
       #mutate(text = .y) |>

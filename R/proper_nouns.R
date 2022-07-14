@@ -71,7 +71,7 @@ ent_type_from_lang <- function(lang){
 #' y <- get_proper_nouns(x =  c('run fast', 'The Ottawa Senators are not going to win the Stanley Cup. Maybe they should recruit Justin Bieber, I hear he is better at hockey then music. Trudeau could be an enforcer as he was a boxer.', 'Who is the informant Deep Thoat? Its pseudonym of Bob Woodward!'))
 #' get_proper_nouns(x = 'run fast')
 # x = 'we have had 2 prime ministers named Trudeau , the father Trudeau  and the son Trudeau.'
-#' 
+#' x = "in 1812 madison was mad he was the president, you know but he thought he tell the british where they ought to go"
 #' 
 get_proper_nouns <- function(x, 
                              lang, 
