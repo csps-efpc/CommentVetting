@@ -150,9 +150,7 @@ custom_tokenize_ngrams <- function(string, lowercase = TRUE, n = 3) {
 #'
 #' @examples
 #'    best_hashs(x = c('poop','We love you',"We passed upon the stair We spoke of was and when Although I wasn't there He said I was his friend",'Is this the real life? Is this just fantasy? Caught in a landside,No escape from reality','Wake up (Wake up) Grab a brush and put a little make-up', "I hurt myself today To see if I still feel I focus on the pain The only thing that's real"))
-best_hashs <- function(x, shingle_size = 4){
-  
-  x_summary <- 
+best_hashs <- function(x, shingle_size = 4, percentile = 0.25){
       x |>
         #sample(3) |>  
         unlist() |>
@@ -160,10 +158,8 @@ best_hashs <- function(x, shingle_size = 4){
           custom_tokenize_ngrams(string = .x, n = shingle_size)
         }) |>
         lengths()|>
-        summary()   
-
-  
-  closest_highly_composite(x_summary[['1st Qu.']])
+        quantile(percentile) |> 
+        closest_highly_composite()
 }
 
 
@@ -294,6 +290,55 @@ edit_required <- function(a, b){
 
 
 
+#' Wrapper around extreuse::TextReuseCorpus this is a work around this bug 
+#' https://github.com/ropensci/textreuse/pull/80 which was never incorporated.
+#'
+#' @param ... 
+#' @param n 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+custom_TextReuseCorpus <- function(..., n=3){
+  mc <- match.call()
+  if (!is.null(mc$n)) {
+    mc$n <- eval.parent(mc$n)
+  }
+  mc[[1]] <- quote(textreuse::TextReuseCorpus)
+  eval.parent(mc)
+}
+
+
+
+
+#' Use this to estimate shingle size
+#'
+#' @param dat 
+#' @param col_nm 
+#' @param id_nm 
+#' @param quant 
+#' @param divisor 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+best_shingle_size <- function(dat, 
+                   col_nm = 'text', 
+                   id_nm = 'comment_id', 
+                   quant = 0.1,
+                   divisor = 10,
+                   min_shingle_size = 3){
+  (dat |>
+    unnest_tokens(words, !!sym(col_nm)) |> 
+    count(!!sym(id_nm)) |>
+    pull(n) |> #summary()
+    quantile(quant) / divisor )|> 
+    round() |>
+    max(min_shingle_size)
+}
+
 
 
 #' Divides some comments up into groups.
@@ -328,7 +373,8 @@ find_near_duplicats <- function(x,
                                     comment_id = 1:length(x),
                                     text = x) |>
                                   mutate_all(as.character),
-                                n_hashes = best_hashs(x, shingle_size = 4), 
+                                shingle_size = best_shingle_size(dat),
+                                n_hashes = best_hashs(x, shingle_size = shingle_size, percentile = 0.25), 
                                 low_prob = 0.25,
                                 high_prob = 0.75,
                                 n_bands = best_bands(n_hashes, low_prob = low_prob, high_prob = high_prob),
@@ -338,20 +384,20 @@ find_near_duplicats <- function(x,
                                 progress = TRUE
 ){
   
-  print(glue('{Sys.time()} making corpus object for {nrow(dat)} documents, using {n_hashes} hashes and {n_bands} bands'))
+  print(glue('{Sys.time()} making corpus object for {nrow(dat)} documents, using {n_hashes} hashes, {n_bands} bands and {shingle_size} shingle size'))
 
   corpus_chunk <- 
     dat |>
     #sample_n(1) |>[]
     deframe() %>%
     #TextReuseTextDocument(
-    textreuse::TextReuseCorpus(
+    custom_TextReuseCorpus(
       text = ., 
       tokenizer = custom_tokenize_ngrams, 
       minhash_func = minhash_func , 
       keep_tokens = TRUE,
       progress = progress, 
-      n = 4 # This is stupid but for some reason I get an error when I move n=3 up into a parameter for this function, so for now n =4 is a magic number
+      n = shingle_size
     ) 
   
   print(glue('{Sys.time()} making clusters for corpus'))
@@ -408,6 +454,7 @@ find_near_duplicats <- function(x,
     cluster_comments |>
     full_join(cluster_names, by = "grp")
 
+  
   b <-   
     cluster_comments_with_name |>
     group_split(grp)  |> # magrittr::extract2(1) ->.grp_dat

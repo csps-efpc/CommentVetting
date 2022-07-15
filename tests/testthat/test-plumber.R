@@ -2,6 +2,11 @@ library(httr)
 library(glue)
 library(purrr)
 library(dplyr)
+library(testthat)
+
+
+SERVER = 'http://127.0.0.1'
+PORT_NNUMBER = 9542
 
 
 # https://irene.rbind.io/post/iterative-testing-plumber/
@@ -19,8 +24,8 @@ library(dplyr)
 #'
 #' @examples
 test_get <- function(
-    server = 'http://127.0.0.1',
-    port = 9302,
+    server = SERVER,
+    port = PORT_NNUMBER,
     endpoint = 'check_message',
     httr_method = httr::GET,
     params = list(),
@@ -45,9 +50,9 @@ test_get <- function(
 
 
 test_letter_writing_campaign <- function(
-    server = 'http://127.0.0.1',
+    server = SERVER,
     fn = list.files(file.path('private', 'regulations.gov'), pattern = '^comments_details_.*\\.csv$', full.names = TRUE) |> head(1),
-    port = 9302,
+    port = PORT_NNUMBER,
     endpoint = 'letter_writing_campaign',
     httr_method = httr::POST,
     params = list(col_nm='comment'),
