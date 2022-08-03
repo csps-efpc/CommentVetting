@@ -44,9 +44,10 @@ validate_sin <- function(x){
 luhn_checksum <- function(x, mod_div = 10){
   str_remove_all(string = x, pattern = '[^0-9]+') |>
     stri_reverse() |> 
-    str_split('') |> 
-    map(\(chrs){
-      map2(chrs, !as.logical(1:length(chrs) %% 2) ,\(ch, multi){
+    str_split('') |> #  magrittr::extract2(1) 
+    purrr::map(\(chrs){
+      #print(chrs)
+      purrr::map2(chrs, !as.logical(1:length(chrs) %% 2) ,\(ch, multi){
         if (multi) {
           if (as.integer(ch) <= 4){
             as.integer(ch) * 2
@@ -207,7 +208,7 @@ str_locate_rx_check_func <- function(x,
 #' @examples
 #'  get_regex_combined(x = c('this is a valid but unassigned SIN 046 454 286, and this is an invalid but properly formated sin 321 543 8761.', 'no Sin here', 'we now have and email address, funny@man.ca' ), lang = 'english')
 #'  get_regex_combined(x = 'Ryan Gosling likes to eat poop, because it tastes good. What a fucking Wierdo!, call and complaing at 1 (800) 622-6232.')
-#' 
+#'  get_regex_combined(x = 'Homer Simpson lives at 742 Evergreen Terrance Springfield, Ontario.')
 get_regex_combined <- function(x, lang, regex_dat = read_regex_categories()){
   assertthat::assert_that(length(lang) == 1)
 
@@ -221,14 +222,15 @@ get_regex_combined <- function(x, lang, regex_dat = read_regex_categories()){
   # .text_cleaner = janitor::make_clean_names(str_sub(.text, 1, str_nchar_limit), case = 'title')
   # .text_cleaner_edits = edit_required(.text, .text_cleaner)
   
-  
+  lang <- lang_code(lang)
   
   regex_dat_lng <- 
     regex_dat |> 
-    filter(str_detect(lng, lang) | lng == 'ALL') |> 
+    filter(str_detect(string = lng, pattern = regex(pattern = lang, ignore_case = TRUE)) | lng == 'ALL') |> 
     #filter(lng == lang) |> 
     select(-lng)  
       
+  
   ################################
   # 
   #purrr::map2_dfr(x_no_accents, x, ~{

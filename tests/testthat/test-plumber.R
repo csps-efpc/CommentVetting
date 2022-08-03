@@ -3,15 +3,16 @@ library(glue)
 library(purrr)
 library(dplyr)
 library(testthat)
-
+library(readr)
+library(dotenv)
+library(stringr)
 
 SERVER = 'http://127.0.0.1'
-PORT_NNUMBER = 9542
-
+PORT_NNUMBER = Sys.getenv('PORT') |> as.integer()
 
 # https://irene.rbind.io/post/iterative-testing-plumber/
 
-#' for testing an endpoint 
+#' For testing an endpoint 
 #'
 #' @param server 
 #' @param port 
@@ -49,6 +50,10 @@ test_get <- function(
 
 
 
+
+
+
+
 test_letter_writing_campaign <- function(
     server = SERVER,
     fn = list.files(file.path('private', 'regulations.gov'), pattern = '^comments_details_.*\\.csv$', full.names = TRUE) |> head(1),
@@ -78,16 +83,33 @@ test_letter_writing_campaign <- function(
 
 
 
+
+
+
+
+
+
 extract_hit_2 <- function(resp, hit){
   str_sub(resp$text, start = hit$start, end = hit$end)
 }
   
 
 
+
+
+
+
+
+
 extract_hit <- function(resp, ih = 1){
   hit = resp$hits[[ih]]
   str_sub(resp$text, start = hit$start, end = hit$end)
 }
+
+
+
+
+
 
 
 
@@ -100,15 +122,29 @@ hit_contains_property <- function(resp , val, prop){
 }
 
 
+
+
+
+
+
+
 hit_contains_type <- function(resp , val){
   hit_contains_property(resp, val = val, prop = 'hit_type')
 }
 
 
 
+
+
+
+
+
 hit_contains_sub_type <- function(resp , val){
   hit_contains_property(resp, val = val, prop = 'sub_type')
 }
+
+
+
 
 
 
@@ -120,6 +156,11 @@ hit_contains_types <- function(resp , vals){
     hit_contains_type(resp = resp, val = .x)
   }) |> unlist()
 }
+
+
+
+
+
 
 
 hit_contains_sub_types <- function(resp , vals){
@@ -141,6 +182,9 @@ str_clean_up <- function(a){
 
 
 
+
+
+
 str_kinda_close <- function(a,b, clean_func = str_clean_up){
   clean_func(a) == clean_func(b)
 }
@@ -148,9 +192,16 @@ str_kinda_close <- function(a,b, clean_func = str_clean_up){
 
 
 
+
+
+
 hit_in_correct_location <- function(hit, resp, ...){
   str_kinda_close(hit$found, extract_hit_2(resp = resp, hit = hit,  ...))
 }
+
+
+
+
 
 
 
@@ -165,9 +216,16 @@ hits_in_correct_location <- function(resp, ...){
 
 
 
+
+
+
 this_hit_is <- function(hit, hit_type, start, end){
   hit$hit_type == hit_type & hit$start == start & hit$end == end
 }
+
+
+
+
 
 
 hit_found_at <- function(resp, hit_type, start, end){
@@ -178,6 +236,12 @@ hit_found_at <- function(resp, hit_type, start, end){
     unlist() |>
     any()
 }
+
+
+
+
+
+
 
 
 
@@ -210,6 +274,9 @@ test_resp <- function(resp, hit_types, sub_types, nms , lang, required_hits = ti
 
 
 
+
+
+
 test_check_message <- function(msg,hit_types, sub_types, nms, lang, required_hits = tibble(hit_type = as.character(), 
                                                                                            start =    as.integer(),
                                                                                            end =      as.integer()) ){
@@ -227,11 +294,16 @@ test_check_message <- function(msg,hit_types, sub_types, nms, lang, required_hit
 
 
 
+
+
 test_that("service is up", 
 {
-  r <-test_get(endpoint = 'up')
+  r <- test_get(endpoint = 'up')
   expect_equal(names(r),'msg')
 })
+
+
+
 
 
 
@@ -241,6 +313,11 @@ test_that("error returned which is good",
   r <-test_get(endpoint = 'does not exist', expected_response = 404)
   expect_equal(names(r),'error')
 })
+
+
+
+
+
 
 
 
@@ -271,7 +348,7 @@ test_that("check_message is working",
     
     
     test_check_message(msg = "in 1812 madison was mad he was the president, you know but he thought he tell the british where they ought to go", 
-                       hit_types = c('proper_nouns'),  
+                       hit_types = c(),  
                        sub_types = c() , 
                        nms= c("text", "lang", "imsg", "hits"), 
                        lang = 'en')
@@ -325,7 +402,7 @@ test_that("check_message is working",
                        lang = 'en',
                        required_hits = 
                          tibble(hit_type = c('proper_nouns', 'proper_nouns', 'e_mail'), 
-                                start =    c('372'         , '91'          , '410'),
+                                start =    c('372'         , '84'          , '410'),
                                 end =      c('386'         , '100'         , '427'))                        
     )     
     
@@ -336,9 +413,9 @@ test_that("check_message is working",
                        nms= c("text", "lang", "imsg", "hits"), 
                        lang = 'fr',
                        required_hits = 
-                         tibble(hit_type = c('proper_nouns', 'proper_nouns', 'e_mail'), 
-                                start =    c('1'         , '102'          , '461'),
-                                end =      c('6'         , '118'         , '478'))                        
+                         tibble(hit_type = c('proper_nouns', 'e_mail'), 
+                                start =    c('102'          , '461'),
+                                end =      c('118'         , '478'))                        
     )         
     
     
@@ -427,3 +504,27 @@ test_that("letter_writing_campaign is working",
   
 })
 
+# 
+# fns <- list.files(file.path('private','OpinRankDataset','hotels'), recursive = TRUE, full.names = TRUE)
+# data <-
+# sample(fns, 500) |> 
+#   map_dfr(~{
+#     read_tsv(file = sample(fns, 1), col_names = c('date', 'title', 'text'), col_types = 'c') |>
+#       mutate(fn = basename(.x))
+#   }) |>
+#   mutate(comment = paste(title, text))
+# 
+# x <- data |> sample_n(5000) |> pull(comment)
+# 
+# 
+# data |> filter(is.na(text))
+# 
+# data |> pivot_longer(matches('^X'),   values_drop_na = FALSE) |> filter(!is.na(value)) |> sele
+# 
+# data <- 
+# data |> 
+# 
+# 
+# x <- data |> sample_n(5000) |> pull(comment)
+# 
+# read_tsv(file = sample(fns, 1), col_names = c('date', 'title', 'text')) 

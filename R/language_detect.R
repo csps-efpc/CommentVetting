@@ -5,7 +5,7 @@ library(readr)
 library(janitor)
 library(stringr)
 library(dplyr)
-
+library(purrr)
 
 
 
@@ -109,6 +109,41 @@ lang_name_to_code <- function(a_lang, a_lang_of_lang = 'english'){
 
 
 
+#' get a language code from a language name or code
+#'
+#' @param lang 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' lang_code('fr')
+#' lang_code(lang = 'French')
+#' lang_code(lang = 'english')
+#' lang_code(lang = 'eng')
+lang_code <- function(lang){
+  a_lang = str_trim( str_to_lower(lang))
+  lang_fnd <- 
+    read_language_code_names() |>
+    #pivot_longer(everything()) |> 
+    filter(lang_name   == a_lang | iso_639_1_code  == a_lang) |>
+    pull(iso_639_1_code) |>
+    unique()
+  
+  if (length(lang_fnd) == 1) {
+    return(lang_fnd)
+  }
+  if (length(lang_fnd) == 0) {
+    warning(glue('the language {lang} did not find a code for it'))
+    return(lang_fnd)
+  }
+  
+  warning(glue('the language {lang} found many codes {paste0(lang, collapse = ',')} returning first code '))  
+  return(lang_fnd[[1]])
+}
+
+
+
 
 #' Title returns the language of the string
 #' list of supported languages
@@ -132,13 +167,16 @@ get_language <- function(x, file_pretrained = system.file(file.path("language_id
   x |> 
     #str_remove_all('[:punct:]') |>
     language_identification(pre_trained_language_model_path =file_pretrained, k = 3)  |> 
+    mutate(ix = row_number()) |>
     pivot_longer(cols = matches('^(prob_|iso_lang_)')) |>
     mutate(ilang = str_extract(name, '[:digit:]+')) |>
     mutate(name = str_remove(name, paste0('_',ilang))) |>
     pivot_wider(names_from = name, values_from = value) |>
     mutate(prob = as.double(prob)) |> 
     mutate(lang_name = lang_code_to_name(iso_lang)) |>
+    group_by(ix) |> 
     slice_max(prob) |>
+    arrange(ix) |>
     pull(lang_name)
 }
 # x <- '中国的领导人是习近平'
@@ -154,7 +192,10 @@ get_language <- function(x, file_pretrained = system.file(file.path("language_id
 #' @export
 #'
 #' @examples
-valid_language<- function(lang, valid_langs = c("english", "french")){
+valid_language<- function(lang, valid_langs = c(c('eng', 'en', 'english'), 
+                                                c('fra', 'fr', 'french')
+                                                )
+                          ){
   lang %in% valid_langs
 }
 

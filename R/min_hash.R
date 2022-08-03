@@ -330,7 +330,8 @@ best_shingle_size <- function(dat,
                    quant = 0.1,
                    divisor = 10,
                    min_shingle_size = 3){
-  (dat |>
+  (
+    dat |>
     unnest_tokens(words, !!sym(col_nm)) |> 
     count(!!sym(id_nm)) |>
     pull(n) |> #summary()

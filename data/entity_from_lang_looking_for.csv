@@ -1,0 +1,12 @@
+lang, entity, looking_for
+en, PERSON, proper_nouns
+fr, PER, proper_nouns
+fr, LOC, address
+fr, MISC, address
+fr, PER, address
+en, PERSON, address
+en, NORP, address
+en, FAC, address
+en, ORG, address
+en, GPE, address
+en, LOC, address

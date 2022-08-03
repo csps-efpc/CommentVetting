@@ -20,7 +20,7 @@ source(file.path('R','generate_regex.R'))
 source(file.path('R','phrase_regex.R'))
 source(file.path('R','language_detect.R'))
 source(file.path('R','min_hash.R'))
-
+source(file.path('R','geo_names.R'))
 
 
 #* @apiTitle Comments Vetting
@@ -36,6 +36,7 @@ function(){
 }
 
 
+msg=c("The main parameter of this enpoint is 'msg', you should think about passing 'msg', its a string....Try it see what happens 😉. If you don't like it the Honky Justin Trudeau will be happy to take your call at 1-800-622-6232", "We have had 2 prime ministers named Trudeau , the father Trudeau  and the son Trudeau. There is also a town Trudeau, Ontario.")
 
 #* run some detection algorithms on the msgs
 #* @param msg The message to check
@@ -47,7 +48,7 @@ function(msg="The main parameter of this enpoint is 'msg', you should think abou
   txt_langs <- 
     tibble(imsg = 1:length(msg),
            text = msg) |>
-    mutate(langs = get_language(text))
+    mutate(langs = get_language(x = text))
   
   
   dat <- 
@@ -62,6 +63,7 @@ function(msg="The main parameter of this enpoint is 'msg', you should think abou
       
       bind_rows(
         get_proper_nouns(x= txts$text, lang = lng) ,
+        get_geo_names(x= txts$text, lang = lng),
         get_regex_combined(x= txts$text, lang = lng),
         find_categories_from_phrase_regex(x= txts$text, lang = lng)
       ) |>
@@ -76,7 +78,7 @@ function(msg="The main parameter of this enpoint is 'msg', you should think abou
   
   
   
-  make_grouped_list(dat, grping =  'imsg',lst_attach = c('text', 'lang', 'imsg'), rest = 'hits' )
+  make_grouped_list(dat = dat, grping =  'imsg', lst_attach = c('text', 'lang', 'imsg'), rest = 'hits' )
   
 }
 
@@ -118,10 +120,5 @@ function(f, col_nm = 'comment', max_rows = -1) {
   
   grps <- find_near_duplicats(dat[[col_nm]])
   make_grouped_list(grps, grping =  'grp',lst_attach = c('grp', 'name', 'grp_size', 'b_str'), rest = 'comments' )
-  
-  # 
-  # #Content  
-  # f[[1]]
+
 }
-
-

@@ -68,9 +68,9 @@ make_grouped_list <- function(dat, grping, lst_attach, rest = 'dat'){
 
 
 G_STOP_WORDS <- NULL
-#' Title
+#' returns a vector of stop words for the language
 #'
-#' @param lang 
+#' @param lang either english or french
 #' @param force_reload 
 #'
 #' @return vector of words that are 'fine' and should not be matched to anything.
