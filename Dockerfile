@@ -1,7 +1,10 @@
 
 FROM rstudio/plumber
 
-# install packages
+# Ensure that the undeclared igraph dependency on libglpk0 gets fulfilled.
+RUN apt-get update && apt-get install -y libglpk40
+
+# install R packages
 RUN R -e "install.packages('spacyr')" \
     R -e "install.packages('tidyr')" \
     R -e "install.packages('dplyr')" \
