@@ -12,4 +12,4 @@ jobs:
     - uses: satackey/action-docker-layer-caching@v0.0.11
       continue-on-error: true
     - name: Build the Docker Image
-      run: docker build . --file Dockerfile --tag commentsvetting:(date +%s)
+      run: docker build . --file Dockerfile --tag commentsvetting:$(date +%s)
