@@ -31,7 +31,8 @@ RUN R -e "install.packages('spacyr')" \
     R -e "install.packages('gtools')" \
     R -e "install.packages('glue')" \
     R -e "install.packages('arrow')" \
-    R -e "install.packages('dotenv')" 
+    R -e "install.packages('dotenv')" \
+    R -e "install.packages('memoise')"
 
 # CWD
 WORKDIR /
