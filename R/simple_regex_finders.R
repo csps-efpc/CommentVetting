@@ -208,7 +208,10 @@ str_locate_rx_check_func <- function(x,
 #' @examples
 #'  get_regex_combined(x = c('this is a valid but unassigned SIN 046 454 286, and this is an invalid but properly formated sin 321 543 8761.', 'no Sin here', 'we now have and email address, funny@man.ca' ), lang = 'english')
 #'  get_regex_combined(x = 'Ryan Gosling likes to eat poop, because it tastes good. What a fucking Wierdo!, call and complaing at 1 (800) 622-6232.')
-#'  get_regex_combined(x = 'Homer Simpson lives at 742 Evergreen Terrance Springfield, Ontario.')
+#'  get_regex_combined(x = 'Homer Simpson lives at 742 Evergreen Terrance Springfield, Ontario.', lang = 'en')
+#'  get_regex_combined(x = 'I like to use ibm.com as an example URL.', lang = 'en')
+#'  get_regex_combined(x = "this is a comment '); DROP my_tabel from DB", lang = 'en')
+#'  get_regex_combined(x = "<Habazutty>yaddayadda</Habazutty><Vogons /><Targ>blahblah</Targ>", lang = 'en')
 get_regex_combined <- function(x, lang, regex_dat = read_regex_categories()){
   assertthat::assert_that(length(lang) == 1)
 
@@ -243,6 +246,7 @@ get_regex_combined <- function(x, lang, regex_dat = read_regex_categories()){
     #lst<- 
       regex_dat_lng |> 
       purrr::pmap_dfr(\(rx , cat, sub_cat, ignr_cs, func_ch){
+            #rx = regex_dat_lng |> slice(24) |> pull(rx)
             str_locate_rx_check_func(.x, rx, ignr_cs, func_ch) |> 
             mutate(start = (start + str_count(str_sub(.text_cleaner_edits, 1, start), "I")) - str_count(str_sub(.text_cleaner_edits, 1, start), "D")) |>
             mutate(end = (end + str_count(str_sub(.text_cleaner_edits, 1, end), "I")) - str_count(str_sub(.text_cleaner_edits, 1, end), "D")) |>
