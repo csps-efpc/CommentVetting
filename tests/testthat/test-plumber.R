@@ -317,13 +317,50 @@ test_that("error returned which is good",
 
 
 
-
-
-
-
 test_that("check_message is working", 
 {
   
+
+  test_check_message(msg = "this is a comment '); SELECT * FROM my_table", 
+                     hit_types = c('code'),  
+                     sub_types = c('sql') , 
+                     nms= c("text", "lang", "imsg", "hits"), 
+                     lang = 'en',
+                     required_hits = 
+                       tibble(hit_type = c('code'), 
+                              start =    c('19' ),
+                              end =      c('44')) 
+                     
+  )  
+  
+  
+    
+  
+  test_check_message(msg = '<Habazutty>yaddayadda</Habazutty><Vogons /><Targ>blahblah</Targ>', 
+                     hit_types = c('code'),  
+                     sub_types = c('xml') , 
+                     nms= c("text", "lang", "imsg", "hits"), 
+                     lang = 'en',
+                     required_hits = 
+                       tibble(hit_type = c('code', 'code', 'code'), 
+                              start =    c('1' , '34', '44'),
+                              end =      c('11',  '43', '49')) 
+                     
+  )  
+  
+  
+  
+  test_check_message(msg = 'I like to use ibm.com as an example URL, but there is also IBM.com and canada.ca, but bob.dole@gmail.com is a different story.', 
+                     hit_types = c('url'),  
+                     sub_types = c('web') , 
+                     nms= c("text", "lang", "imsg", "hits"), 
+                     lang = 'en',
+                     required_hits = 
+                       tibble(hit_type = c('url', 'url', 'url', 'e_mail'), 
+                              start =    c('15' , '60', '72', '87'),
+                              end =      c('21',  '66', '80', '104')) 
+                     
+                     )
     
     test_check_message(msg = 'Ryan Gosling likes to eat poop, because it tastes good. What a f.u.c.k.i.n.g. Wierdo!, call and complaing at 1 (800) 622-6232.', 
                        hit_types = c('phone_number', 'profanity','proper_nouns'),  
