@@ -1,37 +1,62 @@
 
 FROM rstudio/plumber
 
-# Ensure that the undeclared igraph dependency on libglpk0 gets fulfilled.
+# Ensure that the undeclared igraph dependency on libglpk0 and python gets fulfilled.
 RUN apt-get update && apt-get install -y libglpk40
 
+# intall Python packages
+
+# RUN pip install -U pip setuptools wheel; \
+#    pip install -U spacy
+    
+# RUN python3 -m spacy download en_core_web_sm; \
+#    python3 -m spacy download fr_core_news_md
+
 # install R packages
-RUN R -e "install.packages('spacyr')" \
-    R -e "install.packages('tidyr')" \
-    R -e "install.packages('dplyr')" \
-    R -e "install.packages('stringr')" \
-    R -e "install.packages('textcat')" \
-    R -e "install.packages('fastText')" \
-    R -e "install.packages('readr')" \
-    R -e "install.packages('janitor')" \
-    R -e "install.packages('readxl')" \
-    R -e "install.packages('purrr')" \
-    R -e "install.packages('stringi')" \
-    R -e "install.packages('tidytext')" \
-    R -e "install.packages('quanteda')" \
-    R -e "install.packages('tibble')" \
-    R -e "install.packages('numbers')" \
-    R -e "install.packages('stringdist')" \
-    R -e "install.packages('tm')" \
-    R -e "install.packages('textreuse')" \
-    R -e "install.packages('ggplot2')" \
-    R -e "install.packages('httr')" \
-    R -e "install.packages('jsonlite')" \
-    R -e "install.packages('igraph')" \
-    R -e "install.packages('tokenizers')" \
-    R -e "install.packages('gtools')" \
-    R -e "install.packages('glue')" \
-    R -e "install.packages('arrow')" \
-    R -e "install.packages('dotenv')" 
+RUN R -e "install.packages(c(\
+      'spacyr', \
+      'tidyr', \
+      'dplyr', \
+      'stringr', \
+      'textcat', \
+      'fastText', \
+      'readr', \
+      'janitor', \
+      'readxl', \
+      'purrr', \
+      'stringi', \
+      'tidytext', \
+      'quanteda', \
+      'tibble', \
+      'numbers', \
+      'stringdist', \
+      'tm', \
+      'textreuse', \
+      'ggplot2', \
+      'httr', \
+      'jsonlite', \
+      'igraph', \
+      'tokenizers', \
+      'gtools', \
+      'glue', \
+      'arrow', \
+      'dotenv', \
+      'memoise', \
+      'reticulate', \
+      'testthat' ))"
+
+# Use Reticulate to install miniconda
+
+RUN R -e "reticulate::install_miniconda()"
+
+# Load the two spacy models
+
+RUN R -e "spacyr::spacy_install(prompt = FALSE, lang_models = 'en_core_web_md')"; \
+    R -e "spacyr::spacy_install(prompt = FALSE, lang_models = 'fr_core_news_md')"
+
+# Run the test harness
+
+# RUN R -e "devtools::test()"
 
 # CWD
 WORKDIR /
