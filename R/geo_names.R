@@ -102,7 +102,7 @@ download_geo_names_canada_ca <- function(
   
   
   if (! file.exists(local_fn)){
-    download.file(url,local_fn)  
+    download.file(url,local_fn, quiet = TRUE, cacheOK = TRUE, extra    = '--insecure')
   }
   return(local_fn)
 }
