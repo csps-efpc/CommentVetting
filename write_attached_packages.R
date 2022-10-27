@@ -1,5 +1,9 @@
 
 
+UPGRADE = 'always'
+REPOS = "http://cran.us.r-project.org"
+
+
 
 
 #' Writes a csv file to a file with the name and version number of all attached packages
@@ -26,16 +30,16 @@ write_attached_packages_to_file <- function(fn = 'packages.csv'){
 write_attached_packages_to_file()
 
 
+
 getwd()
-install.packages_from_file  <- function(fn, upgrade = 'always'){
+install.packages_from_file  <- function(fn, upgrade = UPGRADE, repos = REPOS){
   require(remotes)
-  
-  
+  require(purrr)
   packs <- read.csv(fn) 
   
   packs |> 
     purrr::pwalk(\(package, version){
-      remotes::install_version(package = package, version = version, upgrade = upgrade,  repos = "http://cran.us.r-project.org")  
+      remotes::install_version(package = package, version = version, upgrade = upgrade,  repos = repos)  
     })
     
 }
