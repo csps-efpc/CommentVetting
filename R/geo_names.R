@@ -97,13 +97,14 @@ download_geo_names_canada_ca <- function(
     to_be_saved_name = basename(url),
     geo_data_dir = file.path('private', 'geo_data')
     ){
+  dir.create(geo_data_dir, recursive = TRUE)
   
   local_fn <- file.path(geo_data_dir, to_be_saved_name)
   
   
   if (! file.exists(local_fn)){
     #NRCAN has old certificate, use insecure option.
-    download.file(url,local_fn, quiet = TRUE, cacheOK = TRUE, extra    = '--insecure')
+    download.file(url,local_fn, quiet = TRUE, cacheOK = TRUE, extra = '--insecure')
   }
   return(local_fn)
 }

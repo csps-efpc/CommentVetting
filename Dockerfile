@@ -1,34 +1,21 @@
 
 FROM rstudio/plumber
 
-# install packages
-RUN R -e "install.packages('spacyr')" \
-    R -e "install.packages('tidyr')" \
-    R -e "install.packages('dplyr')" \
-    R -e "install.packages('stringr')" \
-    R -e "install.packages('textcat')" \
-    R -e "install.packages('fastText')" \
-    R -e "install.packages('readr')" \
-    R -e "install.packages('janitor')" \
-    R -e "install.packages('readxl')" \
-    R -e "install.packages('purrr')" \
-    R -e "install.packages('stringi')" \
-    R -e "install.packages('tidytext')" \
-    R -e "install.packages('quanteda')" \
-    R -e "install.packages('tibble')" \
-    R -e "install.packages('numbers')" \
-    R -e "install.packages('stringdist')" \
-    R -e "install.packages('tm')" \
-    R -e "install.packages('textreuse')" \
-    R -e "install.packages('ggplot2')" \
-    R -e "install.packages('httr')" \
-    R -e "install.packages('jsonlite')" \
-    R -e "install.packages('igraph')" \
-    R -e "install.packages('tokenizers')" \
-    R -e "install.packages('gtools')" \
-    R -e "install.packages('glue')" \
-    R -e "install.packages('arrow')" \
-    R -e "install.packages('dotenv')" 
+RUN apt-get update
+# Preemptively install libglpk. igraph has an unmanaged dependency on it.
+RUN apt-get install -y libglpk40
+
+# install Python and Spacy packages into the R environment
+# Python dependency tree resolution can take a *very* long time.
+RUN R -e "install.packages(c('spacyr', 'reticulate'))"
+
+RUN R -e "reticulate::install_miniconda()"
+
+RUN R -e "spacyr::spacy_install(prompt = FALSE, lang_models = 'en_core_web_md')"
+
+# install the more typical R packages
+RUN R -e "install.packages(c('tidyr', 'dplyr', 'stringr', 'textcat', 'fastText', 'readr', 'janitor', 'readxl', 'purrr', 'stringi', 'tidytext', 'quanteda', 'tibble', 'numbers', 'stringdist', 'tm', 'textreuse', 'ggplot2', 'httr'))" \
+    R -e "install.packages(c('jsonlite', 'igraph', 'tokenizers', 'gtools', 'glue', 'arrow', 'dotenv', 'gtools', 'NLP', 'memoise'))"
 
 # CWD
 WORKDIR /
@@ -37,5 +24,5 @@ WORKDIR /
 # excluding files like README.md in .dockerignore
 COPY ./ /app/
 
-# to launch your docker container
+# Launch Plumber
 CMD ["/app/plumber.R"]
