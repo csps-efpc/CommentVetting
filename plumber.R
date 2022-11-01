@@ -36,7 +36,7 @@ function(){
 }
 
 
-msg=c("The main parameter of this enpoint is 'msg', you should think about passing 'msg', its a string....Try it see what happens 😉. If you don't like it the Honky Justin Trudeau will be happy to take your call at 1-800-622-6232", "We have had 2 prime ministers named Trudeau , the father Trudeau  and the son Trudeau. There is also a town Trudeau, Ontario.")
+# msg=c("The main parameter of this enpoint is 'msg', you should think about passing 'msg', its a string....Try it see what happens 😉. If you don't like it the Honky Justin Trudeau will be happy to take your call at 1-800-622-6232", "We have had 2 prime ministers named Trudeau , the father Trudeau  and the son Trudeau. There is also a town Trudeau, Ontario.")
 
 #* run some detection algorithms on the msgs
 #* @param msg The message to check
