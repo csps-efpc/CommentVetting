@@ -24,12 +24,6 @@ WORKDIR /
 # excluding files like README.md in .dockerignore
 COPY ./ /app/
 
-# NRCan's open data server is slow AF. Prefetch the place names data and bake it into the image.
-RUN mkdir -p private/geo_data
-
-RUN curl https://ftp.cartes.canada.ca/pub/nrcan_rncan/vector/geobase_cgn_toponyme/prov_csv_eng/cgn_canada_csv_eng.zip --output private/geo_data/cgn_canada_csv_eng.zip
-
-
 # Launch Plumber
 
 CMD ["/app/plumber.R"]
