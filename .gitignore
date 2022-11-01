@@ -41,7 +41,14 @@ vignettes/*.pdf
 test_data/
 test_data/*
 
-private/
-private/*
+private/IMDB Dataset.csv/*
+private/jigsaw-toxic-comment-classification-challenge/*
+private/jigsaw-unintended-bias-in-toxicity-classification/*
+private/OpinRankDataset/*
+private/regulations.gov/*
+private/stanfordSentimentTreebank/*
+private/geo_data/allCountries.zip
+private/geo_data/world_cities.csv
+
 
 .env
