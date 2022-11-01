@@ -240,7 +240,15 @@ get_spacy_model_hits <- function(x,
   # Run the SPACY Model that was loaded earlier
   spacy_parse_data <- 
     if (valid_language(lang = lang) &  sum(nchar(x)) > 0){
-      spacyr::spacy_parse(x, full_parse = TRUE, pos = TRUE, tag = TRUE, lemma = FALSE, entity = TRUE, dependency = TRUE, nounphrase = TRUE) |> tibble::as_tibble() |> 
+      
+      #spacyr::spacy_parse("We have had 2 prime ministers named Trudeau , the father Trudeau  and the son Trudeau. There is also Martin Brian Mulroney. ", full_parse = TRUE, pos = TRUE, tag = TRUE, lemma = FALSE, entity = TRUE, dependency = TRUE, nounphrase = TRUE)|> tibble::as_tibble()
+      
+      #spacyr::spacy_parse('go fuck yourself', full_parse = TRUE, pos = TRUE, tag = TRUE, lemma = FALSE, entity = TRUE, dependency = TRUE, nounphrase = TRUE)|> tibble::as_tibble() %>%
+        
+        
+      spacyr::spacy_parse(x, full_parse = TRUE, pos = TRUE, tag = TRUE, lemma = FALSE, entity = TRUE, dependency = TRUE, nounphrase = TRUE) |> tibble::as_tibble() %>%
+        {if('nounphrase' %in% colnames(.)) . else mutate(., nounphrase = '')} %>%
+        {if('whitespace' %in% colnames(.)) . else mutate(., whitespace = TRUE)} |>
         dplyr::mutate(index = as.integer(stringr::str_replace(doc_id, '^text', ''))) |>
         select(-doc_id)
       
@@ -329,6 +337,8 @@ get_spacy_model_hits <- function(x,
       #rint(glue('dat = {typeof(.dat)}'))
       #rint(glue('key = {.key}'))
       #print(.key)
+      #.key = 1
+      #.dat <- spacy_parse_data2 |> filter(sentence_id == .key)
       
       #.dat <- spacy_parse_data2 |> filter(index  == 1 & is.na(sentence_id))
       .key <- tibble(index  = 1, sentence_id = as.character(NA))
