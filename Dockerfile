@@ -11,7 +11,7 @@ RUN R -e "install.packages(c('spacyr', 'reticulate'))"
 
 RUN R -e "reticulate::install_miniconda()"
 
-RUN R -e "spacyr::spacy_install(prompt = FALSE, lang_models = 'en_core_web_md')"
+RUN R -e "spacyr::spacy_install(prompt = FALSE, lang_models = c('en_core_web_md', 'fr_core_news_md'))"
 
 # install the more typical R packages
 RUN R -e "install.packages(c('tidyr', 'dplyr', 'stringr', 'textcat', 'fastText', 'readr', 'janitor', 'readxl', 'purrr', 'stringi', 'tidytext', 'quanteda', 'tibble', 'numbers', 'stringdist', 'tm', 'textreuse', 'ggplot2', 'httr'))" \
