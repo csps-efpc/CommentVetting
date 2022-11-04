@@ -35,7 +35,7 @@ function(){
   list(msg = glue("The service is up, started at {G_FIRST_TIME}, current time'{toc}'. uptime is {round(difftime(toc, G_FIRST_TIME, 'mins'),0)} min"))
 }
 
-
+# 
 # msg=c("The main parameter of this enpoint is 'msg', you should think about passing 'msg', its a string....Try it see what happens 😉. If you don't like it the Honky Justin Trudeau will be happy to take your call at 1-800-622-6232", "We have had 2 prime ministers named Trudeau , the father Trudeau  and the son Trudeau. There is also a town Trudeau, Ontario.")
 
 #* run some detection algorithms on the msgs
@@ -109,11 +109,22 @@ function(f, col_nm = 'comment', max_rows = -1) {
   # data_save_dir <- file.path('private', 'regulations.gov')
   # fn <- list.files(data_save_dir, pattern = '^comments_details_.*\\.feather$', full.names = TRUE) |> sample(1)
   # f <- list(arrow::read_feather(fn))
-  dat <- f[[1]]
-  if (max_rows > 0 & max_rows < nrow(dat)){
-    dat <- head(dat, max_rows)
-  }
   
+  max_rows <- as.integer(max_rows)
+  dat <- f[[1]]
+  print(glue('max_rows={max_rows} class = {class(max_rows)}, nrow = {nrow(dat)}'))
+  
+  if (max_rows != -1){
+    print(glue('keeping head only {max_rows} rows'))
+    dat <- dat |> head(max_rows)
+    print(glue('keeping all {nrow(dat)} rows'))
+    
+  }else{
+    print(glue('keeping all {nrow(dat)} rows'))
+    #dat <- dat
+  } 
+  print(glue('max_rows={max_rows}, nrow = {nrow(dat)}'))
+  # 
   print(glue('NAMES FROM FILE {names(dat)}, col_nm = {col_nm}'))
 
   
